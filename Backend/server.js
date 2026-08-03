@@ -40,7 +40,7 @@ app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
 //  Routes
 app.get("/", (req, res) => {
-  res.send("servver is running...");
+  res.send("servver is running..");
 });
 
 app.use("/auth", authRoutes);
