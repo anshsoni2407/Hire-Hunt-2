@@ -24,8 +24,8 @@ const SavedJobs = () => {
 
     try {
       const jobs = await axios.get(
-        `http://localhost:3000/job/fetch/savedJobs/${userId}`,
-        { withCredentials: true }
+        `${import.meta.env.VITE_BaseUrl}/job/fetch/savedJobs/${userId}`,
+        { withCredentials: true },
       );
       setsavedJobs(jobs.data.SavedJobs || []);
     } catch (error) {
@@ -43,7 +43,7 @@ const SavedJobs = () => {
       if (!userId) return;
 
       await axios.delete(
-        `http://localhost:3000/job/removeSavedJob/${jobId}/${userId}`
+        `${import.meta.env.VITE_BaseUrl}/job/removeSavedJob/${jobId}/${userId}`,
       );
 
       const updatedJobs = savedJobs.filter((job) => job._id !== jobId);

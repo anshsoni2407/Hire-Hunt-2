@@ -24,9 +24,13 @@ const Login = () => {
 
     try { 
   
-      const res = await axios.post("http://localhost:3000/auth/login", data,{
-        withCredentials:true
-      });
+      const res = await axios.post(
+        `${import.meta.env.VITE_BaseUrl}/auth/login`,
+        data,
+        {
+          withCredentials: true,
+        },
+      );
       setisLoading(true);
       console.log("data sent to backend");
       toast.success("Login successful!");
@@ -41,6 +45,9 @@ const Login = () => {
         Navigate("/jobseekerDash");
       } else if (userRole === "employer") {
         Navigate("/employerDash");
+      }
+      else if (userRole === "admin") {
+        Navigate("/adminDash")
       }
     } catch (error) {
       console.log("Login error:", error.response.data.message);

@@ -16,7 +16,7 @@ const Applicants = () => {
   const fetchApplicants = async () => {
     try {
       const response = await axios.get(
-        `http://localhost:3000/application/fetch/applicants/${userId}`
+        `${import.meta.env.VITE_BaseUrl}/application/fetch/applicants/${userId}`,
       );
       setApplicants(response.data.applicants);
       setFilterApplicants(response.data.applicants);
@@ -38,8 +38,8 @@ const handleStatusUpdate = async (applicationId, newStatus) => {
     console.log("before api call");
 
     const statusUpdate = await axios.patch(
-      `http://localhost:3000/application/update/${applicationId}`,
-      { status: newStatus }
+      `${import.meta.env.VITE_BaseUrl}/application/update/${applicationId}`,
+      { status: newStatus },
     );
 
     console.log("after api call", statusUpdate);

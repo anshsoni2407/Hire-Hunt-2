@@ -28,13 +28,13 @@ const ExpandedCard = ({ closeExpand, job }) => {
 
     try { 
       const res = await axios.post(
-        `http://localhost:3000/application/apply/${jobId}/${userId}`,
+        `${import.meta.env.VITE_BaseUrl}/application/apply/${jobId}/${userId}`,
         formData,
         {
           headers: {
             "Content-Type": "multipart/form-data",
           },
-        }
+        },
       );
       console.log("Application submitted:", res.data);
       toast.success("Application submitted successfully!");

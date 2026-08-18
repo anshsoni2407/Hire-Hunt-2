@@ -18,7 +18,7 @@ const AppliedJobs = () => {
   const fetchAppliedJobs = async () => {
     try {
       const job = await axios.get(
-        `http://localhost:3000/application/fetch/${userId}`
+        `${import.meta.env.VITE_BaseUrl}/application/fetch/${userId}`,
       );
       setAppliedJobs(job.data.jobs);
     } catch (error) {

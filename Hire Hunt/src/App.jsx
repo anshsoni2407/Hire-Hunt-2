@@ -20,11 +20,12 @@ const App = () => {
           <Route path="/sign-up" element={<Register />} />
           <Route path="/employerDash" element={<EmployeDashboard />} />
           <Route path="/jobseekerDash" element={<JobSeekerDashboard />} />
+          <Route path="/adminDash" element={<JobSeekerDashboard />} />
+
           <Route path="/saveJobsPage" element={<SavedJobs />} />
           <Route path="/createdJobsTable" element={<CreatedJobTable />} />
           <Route path="/appliedJobs" element={<AppliedJobs />} />
-          <Route path="/applicants" element={<Applicants/>} />
-
+          <Route path="/applicants" element={<Applicants />} />
           {/* Add more routes as needed */}
         </Routes>
       </BrowserRouter>
