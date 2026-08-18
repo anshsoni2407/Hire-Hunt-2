@@ -23,6 +23,10 @@ const userSchema = mongoose.Schema(
       type: String,
       required: true,
     },
+    isBlocked: {
+      type: Boolean,
+      default: false,
+    },
     SavedJobs: [
       {
         type: mongoose.Schema.Types.ObjectId,

@@ -4,6 +4,7 @@ import Register from './components/Auth/Register'
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import EmployeDashboard from './components/dashboard/EmployeDashboard';
 import JobSeekerDashboard from './components/dashboard/JobSeekerDashboard';
+import AdminDashboard from './components/dashboard/AdminDashboard';
 import SavedJobs from './components/JobSeeker/SavedJobs';
 import CreatedJobTable from './components/Employer/CreatedJobTable';
 import AppliedJobs from './components/JobSeeker/AppliedJobs';
@@ -20,7 +21,7 @@ const App = () => {
           <Route path="/sign-up" element={<Register />} />
           <Route path="/employerDash" element={<EmployeDashboard />} />
           <Route path="/jobseekerDash" element={<JobSeekerDashboard />} />
-          <Route path="/adminDash" element={<JobSeekerDashboard />} />
+          <Route path="/adminDash" element={<AdminDashboard />} />
 
           <Route path="/saveJobsPage" element={<SavedJobs />} />
           <Route path="/createdJobsTable" element={<CreatedJobTable />} />
