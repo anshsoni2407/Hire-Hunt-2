@@ -1,51 +1,78 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { IoCloseOutline } from "react-icons/io5";
-import { IoMdArrowBack } from "react-icons/io";
-import { Link } from "react-router-dom";
+import { 
+  HiOutlineArrowLeft, 
+  HiOutlinePencilSquare, 
+  HiOutlineTrash, 
+  HiOutlineBriefcase,
+  HiOutlineXMark,
+  HiOutlineMapPin,
+  HiOutlineInformationCircle
+} from "react-icons/hi2";
+import { Link, useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
+import Footer from "../Reusable.jsx/Footer.jsx";
+import ConfirmDialog from "../Admin/ConfirmDialog.jsx";
 
 const CreatedJobTable = () => {
-  const [createdJobsByEmp, setcreatedJobsByEmp] = useState([]);
-  const [refershFlag, setrefershFlag] = useState(false);
+  const [createdJobsByEmp, setCreatedJobsByEmp] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshFlag, setRefreshFlag] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editFormData, setEditFormData] = useState(null);
+  const [isUpdating, setIsUpdating] = useState(false);
+  
+  // Confirm delete dialog
+  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, jobId: null, jobTitle: "" });
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const userId = JSON.parse(localStorage.getItem("loggedInEmp")).id;
+  const navigate = useNavigate();
+  const loggedInEmp = JSON.parse(localStorage.getItem("loggedInEmp") || "{}");
+  const userId = loggedInEmp?.id || loggedInEmp?._id;
 
-  const createdJobs = async () => {
+  const loadCreatedJobs = async () => {
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
     try {
+      setLoading(true);
       const res = await axios.get(
         `${import.meta.env.VITE_BaseUrl}/job/fetch/createdJobs/${userId}`,
-        {
-          withCredentials: true,
-        },
+        { withCredentials: true }
       );
-      setcreatedJobsByEmp(res.data.createdJobs.CreatedJobs);
+      setCreatedJobsByEmp(res.data.createdJobs?.CreatedJobs || []);
     } catch (error) {
       console.error("Error fetching created jobs:", error.message);
-    } 
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    createdJobs();
-  }, [refershFlag]);
+    loadCreatedJobs();
+  }, [refreshFlag]);
 
-  const handleDelete = async (jobId) => {
+  const handleDelete = async () => {
+    if (!deleteConfirm.jobId) return;
     try {
+      setIsDeleting(true);
       await axios.delete(
-        `${import.meta.env.VITE_BaseUrl}/job/deleteJob/${jobId}/${userId}`,
+        `${import.meta.env.VITE_BaseUrl}/job/deleteJob/${deleteConfirm.jobId}/${userId}`
       );
-      setrefershFlag((prev) => !prev);
+      setRefreshFlag((prev) => !prev);
       toast.success("Job deleted successfully");
+      setDeleteConfirm({ isOpen: false, jobId: null, jobTitle: "" });
     } catch (error) {
       console.log("error in job deleting", error.message);
-      toast.error("Error deleting job");
+      toast.error(error.response?.data?.message || "Error deleting job");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
   const handleEdit = (job) => {
-    setEditFormData(job);
+    setEditFormData({ ...job });
     setShowEditModal(true);
   };
 
@@ -53,283 +80,367 @@ const CreatedJobTable = () => {
     setEditFormData({ ...editFormData, [e.target.name]: e.target.value });
   };
 
-  const handleUpdate = async () => {
-    const jobId = editFormData._id
+  const handleUpdate = async (e) => {
+    if (e) e.preventDefault();
+    const jobId = editFormData._id;
     try {
+      setIsUpdating(true);
       await axios.put(
         `${import.meta.env.VITE_BaseUrl}/job/update/${jobId}`,
-        editFormData,
+        editFormData
       );
       toast.success("Job updated successfully");
       setShowEditModal(false);
-      setrefershFlag((prev) => !prev);
+      setRefreshFlag((prev) => !prev);
     } catch (error) {
       console.log("Update error:", error.message);
-      toast.error("Error updating job");
+      toast.error(error.response?.data?.message || "Error updating job");
+    } finally {
+      setIsUpdating(false);
     }
   };
 
   return (
-    <div>
+    <div className="min-h-screen flex flex-col justify-between bg-gray-50 font-sans">
       <ToastContainer position="top-right" autoClose={2000} />
-      <div className="flex items-center justify-between bg-black text-[#E0C163] p-2 shadow-lg w-full mb-6">
-        <Link to={"/employerDash"}>
-          <button className="text-2xl hover:text-black hover:bg-[#E0C163] p-2 rounded-full transition">
-            <IoMdArrowBack />
-          </button>
-        </Link>
-        <h1 className="text-3xl font-semibold">Created Job</h1>
 
-        <Link to={"/employerDash"}>
-          <button className="text-2xl hover:text-black hover:bg-[#E0C163] p-2 rounded-full transition">
-            <IoCloseOutline />
-          </button>
-        </Link>
+      <div>
+        {/* Header Bar */}
+        <div className="bg-black text-white px-4 sm:px-8 py-4 shadow-sm">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <Link
+                to="/employerDash"
+                className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+                aria-label="Back to dashboard"
+              >
+                <HiOutlineArrowLeft className="h-6 w-6" />
+              </Link>
+              <div>
+                <h1 className="text-xl font-bold text-white tracking-tight">
+                  Posted <span className="text-[#E0C163]">Jobs</span>
+                </h1>
+                <p className="text-xs text-gray-400 hidden sm:block">
+                  Manage all active listings published by your organization
+                </p>
+              </div>
+            </div>
+
+            <Link
+              to="/employerDash"
+              className="text-xs font-semibold text-[#E0C163] hover:underline"
+            >
+              + Create New Listing
+            </Link>
+          </div>
+        </div>
+
+        {/* Content Body */}
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {loading ? (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center animate-pulse space-y-4">
+              <div className="h-6 bg-gray-200 rounded w-1/4 mx-auto"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto"></div>
+              <div className="h-10 bg-gray-200 rounded w-full"></div>
+            </div>
+          ) : createdJobsByEmp.length === 0 ? (
+            <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center shadow-sm max-w-md mx-auto my-12 space-y-4">
+              <div className="h-16 w-16 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto text-gray-400">
+                <HiOutlineBriefcase className="h-8 w-8" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">No Jobs Posted Yet</h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  Start hiring top candidates by posting your first job opening.
+                </p>
+              </div>
+              <button
+                onClick={() => navigate("/employerDash")}
+                className="px-5 py-2.5 bg-black text-[#E0C163] hover:bg-gray-800 text-sm font-semibold rounded-lg shadow-sm transition-colors"
+              >
+                Post a Job Opening
+              </button>
+            </div>
+          ) : (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 text-left">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        Job Title & Company
+                      </th>
+                      <th className="px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        Location
+                      </th>
+                      <th className="px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        Work Mode
+                      </th>
+                      <th className="px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        Salary
+                      </th>
+                      <th className="px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        Experience
+                      </th>
+                      <th className="px-6 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {createdJobsByEmp.map((job) => {
+                      const companyInitial = (job.companyName?.[0] || "C").toUpperCase();
+
+                      return (
+                        <tr
+                          key={job._id}
+                          className="hover:bg-gray-50/80 transition-colors"
+                        >
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center space-x-3">
+                              <div className="h-10 w-10 rounded-xl bg-black text-[#E0C163] flex items-center justify-center font-bold text-sm shadow-sm flex-shrink-0">
+                                {companyInitial}
+                              </div>
+                              <div>
+                                <div className="text-sm font-bold text-gray-900">
+                                  {job.jobTitle}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  {job.companyName}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                            <div className="flex items-center">
+                              <HiOutlineMapPin className="h-4 w-4 mr-1 text-gray-400" />
+                              <span>{job.location}</span>
+                            </div>
+                          </td>
+
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
+                              {job.jobType}
+                            </span>
+                          </td>
+
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-700">
+                            {job.salary} LPA
+                          </td>
+
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                            {job.experience}
+                          </td>
+
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                            <button
+                              onClick={() => handleEdit(job)}
+                              className="inline-flex items-center px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-100 transition-colors"
+                            >
+                              <HiOutlinePencilSquare className="h-4 w-4 mr-1 text-gray-500" />
+                              Edit
+                            </button>
+                            <button
+                              onClick={() =>
+                                setDeleteConfirm({
+                                  isOpen: true,
+                                  jobId: job._id,
+                                  jobTitle: job.jobTitle,
+                                })
+                              }
+                              className="inline-flex items-center px-3 py-1.5 rounded-lg border border-red-200 text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors"
+                            >
+                              <HiOutlineTrash className="h-4 w-4 mr-1 text-red-500" />
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </main>
       </div>
 
-      {createdJobsByEmp.length === 0 ? (
-        <div className="text-3xl text-center">NO CREATED JOBS</div>
-      ) : (
-        <div className="w-full overflow-x-auto mt-8 mb-8">
-          <table className="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
-            <thead>
-              <tr className="bg-gray-200 text-gray-700 uppercase text-sm leading-normal">
-                <th className="py-3 px-4 text-center">Job Title</th>
-                <th className="py-3 px-4 text-center">Company Name</th>
-                <th className="py-3 px-4 text-center">Location</th>
-                <th className="py-3 px-4 text-center">Job Type</th>
-                <th className="py-3 px-4 text-center">Description</th>
-                <th className="py-3 px-4 text-center">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {createdJobsByEmp.map((job, index) => (
-                <tr
-                  key={index}
-                  className="text-gray-700 border hover:bg-gray-100"
+      {/* Edit Job Modal */}
+      {showEditModal && editFormData && (
+        <div className="fixed inset-0 z-50 bg-gray-900/50 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 w-full max-w-3xl overflow-hidden animate-in fade-in zoom-in duration-200 my-8">
+            <div className="bg-black text-[#E0C163] px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <HiOutlinePencilSquare className="h-5 w-5" />
+                <h2 className="text-lg font-bold">Edit Job Listing</h2>
+              </div>
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <HiOutlineXMark className="h-6 w-6" />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdate} className="p-6 sm:p-8 space-y-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Job Title
+                  </label>
+                  <input
+                    name="jobTitle"
+                    type="text"
+                    value={editFormData.jobTitle}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#E0C163] focus:border-transparent transition-all text-sm"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Company Name
+                  </label>
+                  <input
+                    name="companyName"
+                    type="text"
+                    value={editFormData.companyName}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#E0C163] focus:border-transparent transition-all text-sm"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Location
+                  </label>
+                  <input
+                    name="location"
+                    type="text"
+                    value={editFormData.location}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#E0C163] focus:border-transparent transition-all text-sm"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Work Mode
+                  </label>
+                  <select
+                    name="jobType"
+                    value={editFormData.jobType}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#E0C163] focus:border-transparent transition-all text-sm"
+                    required
+                  >
+                    <option value="Full-Time">Full-Time</option>
+                    <option value="Part-Time">Part-Time</option>
+                    <option value="Internship">Internship</option>
+                    <option value="Remote">Remote</option>
+                    <option value="Contract">Contract</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Salary (LPA)
+                  </label>
+                  <input
+                    name="salary"
+                    type="text"
+                    value={editFormData.salary}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#E0C163] focus:border-transparent transition-all text-sm"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Experience
+                  </label>
+                  <input
+                    name="experience"
+                    type="text"
+                    value={editFormData.experience}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#E0C163] focus:border-transparent transition-all text-sm"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Required Skills
+                </label>
+                <input
+                  name="skills"
+                  type="text"
+                  value={editFormData.skills}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#E0C163] focus:border-transparent transition-all text-sm"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Job Description
+                </label>
+                <textarea
+                  name="description"
+                  value={editFormData.description}
+                  onChange={handleChange}
+                  rows={4}
+                  className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#E0C163] focus:border-transparent transition-all text-sm"
+                  required
+                ></textarea>
+              </div>
+
+              <div className="pt-3 border-t border-gray-100 flex items-center justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors border border-gray-300"
                 >
-                  <td className="py-3 px-4 text-center truncate">
-                    {job.jobTitle}
-                  </td>
-                  <td className="py-3 px-4 text-center truncate">
-                    {job.companyName}
-                  </td>
-                  <td className="py-3 px-4 text-center truncate">
-                    {job.location}
-                  </td>
-                  <td className="py-3 px-4 text-center truncate">
-                    {job.jobType}
-                  </td>
-                  <td className="py-3 px-4 text-center max-w-xs truncate">
-                    {job.description}
-                  </td>
-                  <td className="py-3 px-4 text-center whitespace-nowrap">
-                    <button
-                      onClick={() => handleEdit(job)}
-                      className="text-blue-500 hover:underline"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(job._id)}
-                      className="text-red-500 hover:underline ml-4"
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isUpdating}
+                  className="px-6 py-2 text-sm font-semibold bg-black text-[#E0C163] hover:bg-gray-800 rounded-lg shadow-sm transition-colors disabled:opacity-50"
+                >
+                  {isUpdating ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
-      {/* MODAL */}
-      {showEditModal && editFormData && (
-        <div className="fixed top-0 left-0 flex justify-center bg-black/40 p-4 w-full h-full z-50 overflow-auto">
-          <div className="bg-gray-100 p-4 rounded-xl overflow-y-scroll">
+      {/* Confirm Delete Dialog */}
+      <ConfirmDialog
+        isOpen={deleteConfirm.isOpen}
+        onClose={() => setDeleteConfirm({ isOpen: false, jobId: null, jobTitle: "" })}
+        onConfirm={handleDelete}
+        title="Delete Job Opening"
+        message={`Are you sure you want to delete "${deleteConfirm.jobTitle}"? This will permanently remove the listing and all received applications.`}
+        confirmText="Delete Job"
+        confirmColor="red"
+        loading={isDeleting}
+      />
 
-         <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleUpdate();
-            }}
-            className="relative bg-white shadow-lg rounded-xl p-6 sm:p-8 w-full max-w-4xl"
-          >
-            {/* Header */}
-            <div className="relative mb-6 bg-black text-[#E0C163] rounded-lg py-3">
-              {/* Back button */}
-              <div
-                onClick={() => setShowEditModal(false)}
-                className="absolute top-1/2 -translate-y-1/2 left-3 text-2xl sm:text-3xl font-extrabold cursor-pointer text-white hover:bg-[#E0C163] hover:text-black p-1 rounded-full duration-300"
-              >
-                <IoMdArrowBack />
-              </div>
-              {/* Close button */}
-              <div
-                onClick={() => setShowEditModal(false)}
-                className="absolute top-1/2 -translate-y-1/2 right-3 text-2xl sm:text-3xl font-extrabold cursor-pointer text-white hover:bg-[#E0C163] hover:text-black p-1 rounded-full duration-300"
-              >
-                <IoCloseOutline />
-              </div>
-              <h2 className="text-center font-bold text-lg sm:text-xl">
-                Edit Job
-              </h2>
-            </div>
-
-            {/* Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-              {/* Job Title */}
-              <div>
-                <label htmlFor="jobTitle" className="block font-semibold mb-1">
-                  Job Title
-                </label>
-                <input
-                  name="jobTitle"
-                  type="text"
-                  value={editFormData.jobTitle}
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-[#E0C163]"
-                  placeholder="Frontend Developer"
-                  required
-                />
-              </div>
-
-              {/* Company Name */}
-              <div>
-                <label
-                  htmlFor="companyName"
-                  className="block font-semibold mb-1"
-                >
-                  Company Name
-                </label>
-                <input
-                  name="companyName"
-                  type="text"
-                  value={editFormData.companyName}
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-[#E0C163]"
-                  placeholder="TechCorp Inc."
-                  required
-                />
-              </div>
-
-              {/* Location */}
-              <div>
-                <label htmlFor="location" className="block font-semibold mb-1">
-                  Location
-                </label>
-                <input
-                  name="location"
-                  type="text"
-                  value={editFormData.location}
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-[#E0C163]"
-                  placeholder="Dehradun"
-                  required
-                />
-              </div>
-
-              {/* Job Type */}
-              <div>
-                <label htmlFor="jobType" className="block font-semibold mb-1">
-                  Job Type
-                </label>
-                <select
-                  name="jobType"
-                  value={editFormData.jobType}
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-[#E0C163]"
-                  required
-                >
-                  <option value="">Select</option>
-                  <option value="Full-Time">Full-Time</option>
-                  <option value="Part-Time">Part-Time</option>
-                  <option value="Internship">Internship</option>
-                  <option value="Remote">Remote</option>
-                </select>
-              </div>
-
-              {/* Salary */}
-              <div>
-                <label htmlFor="salary" className="block font-semibold mb-1">
-                  Salary in Lakh Per Annum (LPA)
-                </label>
-                <input
-                  name="salary"
-                  type="text"
-                  value={editFormData.salary}
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-[#E0C163]"
-                  placeholder="20, 40, 60 LPA"
-                  required
-                />
-              </div>
-
-              {/* Experience */}
-              <div>
-                <label
-                  htmlFor="experience"
-                  className="block font-semibold mb-1"
-                >
-                  Experience
-                </label>
-                <input
-                  name="experience"
-                  type="text"
-                  value={editFormData.experience}
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-[#E0C163]"
-                  placeholder="1-2 years"
-                  required
-                />
-              </div>
-            </div>
-
-            {/* Skills */}
-            <div className="mt-4 sm:mt-6">
-              <label htmlFor="skills" className="block font-semibold mb-1">
-                Skills Required
-              </label>
-              <textarea
-                name="skills"
-                value={editFormData.skills}
-                onChange={handleChange}
-                className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-[#E0C163]"
-                placeholder="React, Node.js, MongoDB, etc."
-                rows={3}
-                required
-              ></textarea>
-            </div>
-
-            {/* Description */}
-            <div className="mt-4 sm:mt-6">
-              <label htmlFor="description" className="block font-semibold mb-1">
-                Job Description
-              </label>
-              <textarea
-                name="description"
-                value={editFormData.description}
-                onChange={handleChange}
-                className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-[#E0C163]"
-                placeholder="Write about responsibilities, requirements, perks, etc."
-                rows={4}
-                required
-              ></textarea>
-            </div>
-
-            <button
-              type="submit"
-              className="w-full mt-6 sm:mt-8 bg-black text-[#E0C163] font-semibold py-2 rounded hover:bg-[#333] transition duration-300"
-            >
-              Update Job
-            </button>
-          </form>
-        </div></div>
-      )}
+      <Footer />
     </div>
   );
 };
 
 export default CreatedJobTable;
+
 

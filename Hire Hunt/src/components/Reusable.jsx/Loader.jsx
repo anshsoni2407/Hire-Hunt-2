@@ -9,13 +9,13 @@ const FancyLoader = () => {
   }, []);
 
   return (
-    <div className="fixed inset-0 w-screen h-screen backdrop-blur-sm z-[9999] flex items-center justify-center">
-      <div className="bg-white px-6 py-4 rounded-2xl shadow-2xl border border-blue-100 flex flex-col gap-4 animate-fadeIn">
-        <div className="relative w-10 h-10 flex items-center justify-center m-auto">
-          <div className="absolute inset-0 border-4 border-[#E0C163] border-t-transparent rounded-full animate-spin"></div>
-          <div className="absolute inset-1 rounded-full"></div>
+    <div className="fixed inset-0 z-[9999] bg-gray-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-xl border border-gray-100 px-8 py-6 flex flex-col items-center gap-4 animate-in fade-in zoom-in duration-200">
+        <div className="relative w-12 h-12 flex items-center justify-center">
+          <div className="absolute inset-0 rounded-full border-4 border-gray-100"></div>
+          <div className="absolute inset-0 rounded-full border-4 border-[#E0C163] border-t-transparent animate-spin"></div>
         </div>
-        <div className="text-black text-lg font-bold tracking-wide animate-pulse">
+        <div className="text-gray-800 text-sm font-semibold tracking-wide">
           Please wait...
         </div>
       </div>
@@ -24,3 +24,4 @@ const FancyLoader = () => {
 };
 
 export default FancyLoader;
+
