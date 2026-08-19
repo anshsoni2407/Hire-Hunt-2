@@ -11,7 +11,7 @@ import adminRoutes from "./Routes/Admin.routes.js";
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
 
 //  Allowed origins
 const allowedOrigins = [
@@ -44,10 +44,17 @@ app.get("/", (req, res) => {
   res.send("servver is running..");
 });
 
+// Standard Routes
 app.use("/auth", authRoutes);
 app.use("/job", jobRoutes);
 app.use("/application", applicationRoutes);
 app.use("/admin", adminRoutes);
+
+// API Prefix Routes
+app.use("/api/auth", authRoutes);
+app.use("/api/job", jobRoutes);
+app.use("/api/application", applicationRoutes);
+app.use("/api/admin", adminRoutes);
 
 //  Start Server + DB connect
 app.listen(PORT, () => {
